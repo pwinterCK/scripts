@@ -257,7 +257,6 @@ session = boto3.session.Session()
 region = session.region_name
 ec2_client = boto3.client('ec2', region_name=region)
 regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
-regions = ['us-east-1','us-west-2']
 for az in regions:
     try:
         generate_report_unused_sgs(az)
