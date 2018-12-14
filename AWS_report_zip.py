@@ -15,7 +15,6 @@ region = session.region_name
 ec2_client = boto3.client('ec2', region_name=region)
 regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
 
-
 # GET SG NAME BY ID
 def get_sg_name(sg_id, region):
     if not sg_id: return 'ID NOT SPECIFIED'
@@ -91,7 +90,7 @@ def generate_report_unused_sgs(region):
 
     # ADD DEFAULT AND SGS STARTING WITH AWSEB TO SGS IN USE
     for obj in sgs:
-        if obj['GroupName'] == 'default' or obj['GroupName'].startswith('awseb'):
+        if obj['GroupName'] == 'default' or obj['GroupName'].lower().startswith('awseb') or obj['GroupName'].lower().startswith('CKLS-'):
             sgs_in_use.append(obj['GroupId'])
         all_sgs.append(obj['GroupId'])
 
@@ -131,6 +130,14 @@ def generate_report_unused_sgs(region):
         for j in i['EC2SecurityGroups']:
             if j not in sgs_in_use:
                 sgs_in_use.append(j)
+
+    # FIND USED SGS IN NETWORK INTERFACES
+    network_interfaces = ec2_client.describe_network_interfaces()
+    interfaces = network_interfaces['NetworkInterfaces']
+    for interface in interfaces:
+        for z in interface['Groups']:
+            if z['GroupId'] not in sgs_in_use:
+                sgs_in_use.append(z['GroupId'])
 
     # BUILD CANDIDATES LIST FOR DELETION (all_sgs - sgs_in_use = candidates)
     candidates = []
